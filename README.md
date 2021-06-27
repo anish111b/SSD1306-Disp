@@ -57,3 +57,8 @@ https://wokwi.com/arduino/projects/302535234199486986
 
 
 The simulations were done on https://wokwi.com/ and Proteus, but on Proteus SRAM Memory was an issue with bigger texts not working.
+
+
+**5) Software Serial**
+
+Software Serial Library is included and RX and TX pins are set. Stream of characters being sent over from BLE device are read and stored into char array[], and then normal wrapping and scrolling functions are performed.
