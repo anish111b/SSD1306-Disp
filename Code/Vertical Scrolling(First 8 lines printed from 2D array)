@@ -1,0 +1,109 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerif9pt7b.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+void setup() {
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+
+  int wrapline = 21; // character limit for one line
+  // initialising example string
+  char s[1000] = "Arduino was born at the Ivrea Interaction Design Institute as an easy tool for fast prototyping, aimed at students without a background in electronics and programming. As soon as it reached a wider community, the Arduino board started changing to adapt to new needs and challenges, differentiating its offer from simple 8-bit boards to products for IoT applications, wearable, 3D printing, and embedded environments. All Arduino boards are completely open-source, empowering users to build them independently and eventually adapt them to their particular needs. The software, too, is open-source, and it is growing through the contributions of users worldwide.";
+  int i, k, wraploc, lastwrap;
+
+  lastwrap = 0; // saves character index after most recent line wrap
+  wraploc = 0; // used to find the location for next word wrap
+  int lastchar = 0;
+  // wrapping text
+  for (i = 0; s[i] != '\0'; ++i, ++wraploc) {
+
+    if (wraploc >= wrapline) {
+      for (k = i; k > 0; --k) {
+        // make sure word wrap doesn't overflow past maximum length
+        if (k - lastwrap <= wrapline && s[k] == ' ') {
+          s[k] = '\n'; // adding line breaks at the end of a line
+          lastwrap = k + 1;
+          break;
+        }
+      }
+      wraploc = i - lastwrap;
+    }
+    lastchar = i + 1; // getting the position of last character
+  } // end main loop
+
+  // transferring to 2d array
+  s[lastchar] = '\n'; // adding line break to the end of it
+  char ss[80][50];//2d char array
+  k = 0; // initliaze line counter for 2d array
+  int j = 0; // initialize character counter for 2d array
+  int row[200] = {0}; // array that stores number of elements per line
+  int lines = 0; // stores number of lines in total
+
+  for (i = 0; s[i] != '\0'; i++) //going through every character
+  {
+    if (s[i] != '\n') // checking if end of line
+    {
+      ss[k][j] = s[i]; // forming one line
+      j++;
+      row[k] = row[k] + 1; // counting characters per line
+    }
+    else
+    {
+      ss[k][j] = '\n';
+      k++;// going to next line
+      j = 0;
+      lines++;//counting the number of lines
+    }
+  }
+  // 2D Array SS now has the word wrapped string stored linewise
+  int lastline = 7;// line 1 to 8 need to be printed first
+  char final[180];
+  k = 0;
+  int y = 0; // character index for char final[] that needs to be printed
+  while (k <= lastline) // loop to select lines (ex 1...7)
+  {
+    for (j = 0; j < row[k] + 1; j++) // loop to assign characters from 2D array and create a string
+    {
+      final[y] = ss[k][j];// Printing Line 1 to 8 first and then scrolling will start after an appropriate delay wherein the user can read the first line
+      y++;
+    }
+    k++;// incrementing line lower limit
+  }
+  display.clearDisplay();
+  display.display();
+  display.setCursor(0, 0);
+  display.print(final);// printing the first 8 lines
+  display.display();
+  delay(1000);
+  int upper = 0; // variable to get number of pixels to scroll up(-ve number)
+  lines = lines - 1; // ensuring that last line is still visible(-8 if we want all of the last 8 lines to be display, -1 if only last line needed to be displayed)
+  if (lines > 8) // checking to see if scrolling needs to be done or not
+  {
+
+    upper = lines * 8; // calculating number of pixels needed for lowest line to be at (0,0) cursor position
+    i = 0;
+    for (i = 0; i >= -upper; i--) // printing each line furhter up
+    {
+      display.setCursor(0, i); // printing pixel by pixel
+      display.clearDisplay();
+      display.print(s);
+      display.display();
+      delay(0);
+    }
+  }
+  delay(100000);
+}
+
+void loop() {}
+
+
