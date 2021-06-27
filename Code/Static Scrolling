@@ -1,0 +1,109 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerif9pt7b.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+// The pins for I2C are defined by the Wire-library.
+// On an arduino UNO:       A4(SDA), A5(SCL)
+// On an arduino MEGA 2560: 20(SDA), 21(SCL)
+// On an arduino LEONARDO:   2(SDA),  3(SCL), ...
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+void setup() {
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+  display.setCursor(0, 0);
+
+  int wrapline = 21; //character limit for each line
+  // initialising string to test
+  char s[1000] = "Arduino was born at the Ivrea Interaction Design Institute as an easy tool for fast prototyping, aimed at students without a background in electronics and programming. As soon as it reached a wider community, the Arduino board started changing to adapt to new needs and challenges, differentiating its offer from simple 8-bit boards to products for IoT applications, wearable, 3D printing, and embedded environments. All Arduino boards are completely open-source, empowering users to build them independently and eventually adapt them to their particular needs. The software, too, is open-source, and it is growing through the contributions of users worldwide.";
+  int i, k, wraploc, lastwrap;
+
+  lastwrap = 0; // saves character index after most recent line wrap
+  wraploc = 0; // used to find the location for next word wrap
+  int lastchar = 0;
+  // wrapping text
+  for (i = 0; s[i] != '\0'; ++i, ++wraploc) {
+
+    if (wraploc >= wrapline) {
+      for (k = i; k > 0; --k) {
+        // make sure word wrap doesn't overflow past maximum length
+        if (k - lastwrap <= wrapline && s[k] == ' ') {
+          s[k] = '\n';// adding line breaks
+          lastwrap = k + 1;
+          break;
+        }
+      }
+      wraploc = i - lastwrap;
+    }
+    lastchar = i + 1; // getting the position of last character
+  } // end main loop
+
+  // transferring to 2d array
+  s[lastchar] = '\n'; // adding line break to the end of it
+  char ss[80][50];//2d char array
+  k = 0; // initliaze line counter for 2d array
+  int j = 0; // initialize character counter for 2d array
+  int row[200] = {0}; // array that stores number of elements per line
+  int lines = 0; // stores number of lines in total
+
+  for (i = 0; s[i] != '\0'; i++) //going through every character
+  {
+    if (s[i] != '\n')
+    {
+      ss[k][j] = s[i]; // forming one line
+      j++;
+      row[k] = row[k] + 1; // counting characters per line
+    }
+    else
+    {
+      ss[k][j] = '\n';
+      k++;// going to next line
+      j = 0;
+      lines++;//counting the number of lines
+    }
+  }
+  // 2D Array SS now has the word wrapped string stored linewise
+  int counter = lines; // how many times the printing function has to loop(lines-8+1) or lines
+  int lastline = 8; // last line to be displayed
+  char final[180]; // buffer string
+  k = 0;
+  int y = 0; // character index for char final[] that needs to be printed
+  for (i = 0; i < counter; i++) // loop for scrolling i.e how many times we will print
+  {
+    k = i;
+    y = 0;
+    while (k <= lastline) // loop to select lines (ex 1...7 or 2...8)
+    {
+      for (j = 0; j < row[k] + 1; j++) // loop to assign characters from 2D array and create a string
+      {
+        final[y] = ss[k][j]; // contains L1 to L8.. L2 to L9 so on
+        y++;
+      }
+      k++;// incrementing line lower limit
+    }
+    lastline++; //incrementing line upper limit
+    display.clearDisplay();
+    display.display();
+    display.setCursor(0, 0);
+    display.print(final);//implementing static scrolling
+    display.display();
+    delay(800);
+    final[180] = ""; // resetting buffer
+
+  }
+  delay(10000);
+}
+void loop() {}
+
+
