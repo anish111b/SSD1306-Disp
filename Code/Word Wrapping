@@ -1,0 +1,54 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerif9pt7b.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+void setup() {
+  int wrapline = 21; // number of characters that can be displayed in one line
+  // initilaising a string
+  char s[] = "The Keyboard and Mouse examples are unique to the Leonardo, Micro and Due. They demonstrate the use of libraries that are unique to the board.";
+  int i, k, wraploc, lastwrap;
+
+  lastwrap = 0; // saves character index after most recent line wrap
+  wraploc = 0; // used to find the location for next word wrap
+
+  for (i = 0; s[i] != '\0'; ++i, ++wraploc) // traversing the string
+  {
+
+    if (wraploc >= wrapline) {
+      for (k = i; k > 0; --k)
+      {
+        // make sure word wrap doesn't overflow past maximum length
+        if (k - lastwrap <= wrapline && s[k] == ' ')// checking if word is ending and if it exceeds limit of the display left
+        {
+          s[k] = '\n';// adding line break
+          lastwrap = k + 1;
+          break;
+        }
+      }
+      wraploc = i - lastwrap;
+    }
+
+  } // end main loop
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+  display.setCursor(0, 0);
+  display.clearDisplay();
+  display.print(s);
+  display.display();
+  delay(10000);
+}
+void loop() {
+
+}
+
