@@ -1,0 +1,29 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerif9pt7b.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+void setup() { // initial program to print on OLED Display
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+  display.setCursor(0, 0);
+  display.clearDisplay();
+  display.print("The example code that is included with library runs through all of functions that can be implemented using the library, but it took me quite a while to sort out the minimum functions necessary to display a pixel and display a character. Here's a simplified list of commands with an explanation on their use. This may save you a few hours of head-scratching.");
+  display.display();
+
+
+  delay(10000);
+}
+void loop() {
+
+}
