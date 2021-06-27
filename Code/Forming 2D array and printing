@@ -1,0 +1,89 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerif9pt7b.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+void setup() {
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+  display.setCursor(0, 0);
+
+  int wrapline = 21; // Number of characters allowed per line
+  // initialising a String
+  char s[300] = "The Keyboard and Mouse examples are unique to the Leonardo, Micro and Uno. They demonstrate the use of libraries that are unique to the board.";
+  int i, k, wraploc, lastwrap;
+
+  lastwrap = 0; // saves character index after most recent line wrap
+  wraploc = 0; // used to find the location for next word wrap
+  int lastchar = 0; // variable to find position of final character
+
+  // wrapping text
+  for (i = 0; s[i] != '\0'; ++i, ++wraploc) {
+
+    if (wraploc >= wrapline) {
+      for (k = i; k > 0; --k) {
+        // make sure word wrap doesn't overflow past maximum length
+        if (k - lastwrap <= wrapline && s[k] == ' ') {
+          s[k] = '\n';
+          lastwrap = k + 1;
+          break;
+        }
+      }
+      wraploc = i - lastwrap;
+    }
+    lastchar = i + 1; // getting the position of last character
+  } // end main loop
+
+  // Transferring String to 2D array so that it can be stored Line Wise
+
+  s[lastchar] = '\n'; // adding line break to the end of it, to ensure proper printing in the next loop
+  char ss[50][50];//2D char array- [Line number][Character Number in that Line]
+  k = 0; // initliaze line counter for 2d array
+  int j = 0; // initialize character counter for 2d array
+  int row[200] = {0}; // array that stores number of characters per line
+  int lines = 0; // stores number of lines in total
+
+  for (i = 0; s[i] != '\0'; i++) //going through every character
+  {
+    if (s[i] != '\n') // checking for line break to identify if a line has ended
+    {
+      ss[k][j] = s[i]; // forming one line
+      j++;// incrementing character index
+      row[k] = row[k] + 1; // counting characters per line
+    }
+    else
+    {
+      ss[k][j] = '\n'; // adding line break to signify end of line
+      k++;// Incrementing Line Index to go to the next Line
+      j = 0;
+      lines++;//counting the number of lines
+    }
+  }
+  // 2D Array SS now has the word wrapped string stored linewise
+
+  for (i = 0; i < lines; i++)
+  {
+    for (j = 0; j < row[i] + 1; j++)
+    {
+      display.print(ss[i][j]); //Printing the 2D array Line Wise
+    }
+
+    display.display();
+  }
+  delay(10000);
+}
+void loop() {
+
+
+}
+
