@@ -1,0 +1,78 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerif9pt7b.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+// declaring test String in PROGMEM
+const char input[] PROGMEM = {"Arduino was born at the Ivrea Interaction Design Institute as an easy tool for fast prototyping, aimed at students without a background in electronics and programming. As soon as it reached a wider community, the Arduino board started changing to adapt to new needs and challenges, differentiating its offer from simple 8-bit boards to products for IoT applications, wearable, 3D printing, and embedded environments. All Arduino boards are completely open-source, empowering users to build them independently and eventually adapt them to their particular needs. The software, too, is open-source, and it is growing."};
+
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+void setup() {
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+  char s[350]; // Buffer string, since we cannot write into PROGMEM
+
+  byte wrapline = 21; // character limit for each line
+  int i = 0, k, wraploc, lastwrap;
+
+  for (i = 0; pgm_read_byte_near(input + i) != '\0'; i++) // taking string from PROGMEM and storing in a local variable
+  {
+    s[i] = pgm_read_byte_near(input + i); //writing from PROGMEM
+  }
+
+  lastwrap = 0; // saves character index after most recent line wrap
+  wraploc = 0; // used to find the location for next word wrap
+  int lastchar = 0;
+  byte lines = 0; //variable to count number of lines
+  // wrapping text
+  for (i = 0; s[i] != '\0'; ++i, ++wraploc) {
+
+    if (wraploc >= wrapline) {
+      for (k = i; k > 0; --k) {
+        // make sure word wrap doesn't overflow past maximum length
+        if (k - lastwrap <= wrapline && s[k] == ' ') {
+          s[k] = '\n'; //adding line break
+          lines++;
+          lastwrap = k + 1;
+          break;
+        }
+      }
+      wraploc = i - lastwrap;
+    }
+    lastchar = i + 1; // getting the position of last character
+  } // end main loop
+
+  int upper = 0; // variable to get number of pixels to scroll up(-ve number)
+  lines = lines - 1; // ensuring that last line is still visible(-8 if we want all of the last 8 lines to be display, -1 if only last line needed to be displayed)
+
+  display.clearDisplay();
+  display.setCursor(0, 0); //startin to print from (0,0);
+  display.print(s);
+  display.display();
+  delay(1000);
+  if (lines > 8) // checking to see if text is more than what fits in display in order to perform scrolling
+  {
+    lines++;
+    upper = lines * 8;
+    i = 0;
+    for (i = 0; i >= -upper; i--)
+    {
+      display.setCursor(0, i);
+      display.clearDisplay();
+      display.print(s);
+      display.display();
+      delay(0);
+    }
+  }
+  delay(10000);
+}
+void loop() {}
+
+
