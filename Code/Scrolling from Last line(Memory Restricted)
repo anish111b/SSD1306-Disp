@@ -1,0 +1,65 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+void setup() {
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+
+  byte wrapline = 21; //character limit for one line
+  // initialise string to test
+  char s[150]="Arduino was born at the Ivrea Interaction Design Institute as an easy tool for fast prototyping, aimed at students without a background in elec";
+  int i, k, wraploc, lastwrap;
+
+  lastwrap = 0; // saves character index after most recent line wrap
+  wraploc = 0; // used to find the location for next word wrap
+  byte lines = 0; // to count number of lines
+  // wrapping text
+  for (i = 0; s[i] != '\0'; ++i, ++wraploc) { //traversing through the string
+
+    if (wraploc >= wrapline) {
+      for (k = i; k > 0; --k) {
+        // make sure word wrap doesn't overflow past maximum length
+        if (k - lastwrap <= wrapline && s[k] == ' ') {
+          s[k] = '\n'; //adding a line break to end the line
+          lines++; //counting the number of lines
+          lastwrap = k + 1;
+          break;
+        }
+      }
+      wraploc = i - lastwrap;
+    } 
+  } // end main loop
+int upper=0;
+lines=lines-1;
+  display.clearDisplay();
+  display.setCursor(0,56); //setting start position to print
+  display.print(s); //printing the first 8 lines
+  display.display();
+  delay(1000);
+  lines++;
+  upper=lines*8;
+    i = 0;
+    for (i = 56; i >= -upper; i--)
+    {
+      display.setCursor(0, i); // printing pixel by pixel
+      display.clearDisplay();
+      display.print(s);
+      display.display();
+      delay(10);
+    }
+  delay(100000);
+}
+void loop() {}
+
+
