@@ -1,0 +1,84 @@
+#include <avr/pgmspace.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSerif9pt7b.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+const char s[] PROGMEM = {"Lorem ipsum is a pseudo Latin text used in web design, typography, layout, and printing in place of English to emphasise design elements over content. It is also called placeholder or filler text. It is a convenient tool for mock ups. It helps to outline the visual elements of a document or presentation, eg typography, font, or layout. Lorem ipsum is mostly a part of a Latin text by the classical author and philosopher Cicero. Its words and letters have been changed by addition or removal, so to deliberately render its content nonsensical, it is not genuine, correct, or comprehensible Latin anymore. While lorem ipsum still resembles classical Latin, it actually has no meaning whatsoever. As Ciceros text does not contain the letters K, W, or Z, alien to latin, these, and others are often inserted randomly to mimic the typographic appearance of European languages, as are digraphs not to be found in the original. In a professional context it often happens that private or corporate clients corder a publication to be made and presented with the actual content still not being ready. Think of a news blog that is filled with content hourly on the day of going live. However, reviewers tend to be distracted by comprehensible content, say, a random text copied from a newspaper or the internet. The are likely to focus on the text, disregarding the layout and its elements. Besides, random text risks to be unintendedly humorous or offensive, an unacceptable risk in corporate environments. Lorem ipsum and its many variants have been employed since the early 1960s, and quite likely since the sixteenth century. Cicero famously orated against his political opponent Lucius Sergius Catilina. Occasionally the first Oration against Catiline is taken for type specimens. Quo usque tandem abutere, Catilina, patientia nostra? Quam diu etiam furor iste tuus nos eludet? How long, O Catiline, will you abuse our patience? And for how long will that madness of yours mock us? It was found by Richard McClintock, a philologist, director of publications at Hampden Sydney College in Virginia"};
+// define string in Program Memory
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+void setup() {
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setTextWrap(true);
+  display.setCursor(0, 0);
+  display.clearDisplay();
+  display.display();
+  delay(2000);
+  int count = 0;//variable to count number of characters
+  byte wrapline = 21; //number of characters per line
+  char wrapped[22];//buffer string
+  int i, k, wraploc, lastwrap;
+  int lines = 0;
+  int x = 0;//variable to control pixel y co-ordinate
+  for (i = 0; pgm_read_byte_near(s + i) != '\0'; ++i) // loop to count the number of characters
+  {
+    count++;
+  }
+  lines = count / 18;
+  int upper = lines * 8;
+  for (x = 0; x > -upper; x--)// loop for pixel by pixel printing
+  {
+    display.setCursor(0, x);//setting cursor position
+    int z = 0;
+    lastwrap = 0; // saves character index after most recent line wrap
+    wraploc = 0; // used to find the location for next word wrap
+    for (i = 0; pgm_read_byte_near(s + i) != '\0'; ++i, ++wraploc)//parsing through string
+    {
+      if (wraploc >= wrapline)// checking if character limit is exceeded in line
+      {
+        for (k = i; k > 0; --k)
+        {
+          // make sure word wrap doesn't overflow past maximum length
+          if (k - lastwrap <= wrapline && pgm_read_byte_near(s + k) == ' ')// finding the start of word which exceeds character limit of line
+          {
+            memcpy_P(wrapped, s + lastwrap, k - lastwrap);// copying line by line from PROGMEM to buffer string
+            wrapped[k - lastwrap] = NULL;//replacing blank space with null to terminate line string
+            display.println(wrapped); //printing line
+            lastwrap = k + 1;
+            z = i; // obtaining final index position of last character printed i.e final character index of second last line
+            break;
+          }
+        }
+        wraploc = i - lastwrap;
+      }
+
+    } // end main loop
+
+    for (i = z; i <= count; i++)//printing last line
+    {
+      display.print(char(pgm_read_byte_near(s + i)));
+    }
+    display.display();
+    if (x == 0) // condition to hold first 8 lines for 950 ms
+    {
+      delay(950);
+    }
+    delay(0);
+    display.clearDisplay();
+  }
+}
+
+void loop() {
+
+}
+
